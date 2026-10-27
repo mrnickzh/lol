@@ -57,20 +57,22 @@ int compress(char* file) {
 			else { 
 				o_buff[flag_pos] |= (1 << flag_i);
 				
-				printf("%d sect_len\n", sect_len);
-				printf("%d offset\n", offset);
+				/* printf("%d sect_len\n", sect_len);
+				printf("%d offset\n", offset); */
 				
 				o_buff[o_off++] = (unsigned char)offset;
 				o_buff[o_off++] = (unsigned char)sect_len;
 				
 				i += sect_len;
 				
-				for (int b = 7; b >= 0; b--) {
+				/* for (int b = 7; b >= 0; b--) {
 					putchar((o_buff[flag_pos] & (1 << b)) ? '1' : '0');
 				}
-				putchar('\n');
+				putchar('\n'); */
 			}
 		}
+		
+		/* printf("%d\n", i); */
 	}
 	
 finish:
@@ -114,13 +116,13 @@ int decompress(char* file) {
 				unsigned char sect_len = i_buff[i++];
 				if (!offset && !sect_len) { goto finish; }
 				if (o_size + sect_len >= of_size) {
-					printf("o_size %d, sect_len %d, of_size %d realloc\n", o_size, sect_len, of_size);
+					/* printf("o_size %d, sect_len %d, of_size %d realloc\n", o_size, sect_len, of_size); */
 					of_size += (sect_len > 64 ? sect_len : 64);
 					o_buff = realloc(o_buff, of_size);
 				}
 				
-				printf("%d sect_len\n", sect_len);
-				printf("%d offset\n", offset);
+				/* printf("%d sect_len\n", sect_len);
+				printf("%d offset\n", offset); */
 				
 				for (int k = 0; k < sect_len; k++) {
 					o_buff[o_size + k] = o_buff[o_size - offset + k];
@@ -134,12 +136,13 @@ int decompress(char* file) {
 				i++;
 				
 				if (o_size >= of_size) {
-					printf("o_size %d, of_size %d realloc\n", o_size, of_size);
+					/* printf("o_size %d, of_size %d realloc\n", o_size, of_size); */
 					of_size += 64;
 					o_buff = realloc(o_buff, of_size);
 				}
 			}
 		}
+		/* printf("%d\n", i); */
 	}
 	
 finish:
