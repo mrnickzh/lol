@@ -1,1 +1,1 @@
-gcc main.c -o lol.exe
+gcc main.c -o lol.exe -g
