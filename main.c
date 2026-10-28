@@ -5,30 +5,34 @@
 #define SEARCH_S 255
 
 int compress(char* file) {
-	FILE *fp;
+	FILE *fp, *ofp;
+	char *i_buff, *o_buff;
+	size_t s_size = 0, o_off = 0;
+	long fsize;
+	int i, j, flag_i;
+	char s_buff[SEARCH_S];
+	
 	fp = fopen(file, "rb");
 	if (fp == NULL) { printf("cant open file %s\n", file); return 1; }
 	
 	fseek(fp, 0, SEEK_END);
-	long fsize = ftell(fp);
+	fsize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 	
-	char *i_buff = malloc(fsize);
+	i_buff = malloc(fsize);
 	
-	size_t o_off = 0;
-	char *o_buff = malloc(fsize * 2);
-	
-	size_t s_size = 0;
-	char s_buff[SEARCH_S];
+	o_buff = malloc(fsize * 2);
+                              
 	
 	if((i_buff == NULL) || (o_buff == NULL)) { return 1; }
 	
 	if (fread(i_buff, sizeof(char), fsize, fp) != fsize) { return 1; }
 	
-	for (int i = 0; i < fsize; ) {
+	for (i = 0; i < fsize; ) {
 		size_t flag_pos = o_off;
 		o_buff[o_off++] = 0;
-		for (int flag_i = 0; flag_i < 8; flag_i++) {
+		for (flag_i = 0; flag_i < 8; flag_i++) {
+			int win_start, sect_len = 0, offset = 0;
 			if (i >= fsize) { 
 				o_buff[flag_pos] |= (1 << flag_i);
 				o_buff[o_off++] = (unsigned char)0;
@@ -36,11 +40,9 @@ int compress(char* file) {
 				goto finish;
 			}
 			
-			int win_start = (i < SEARCH_S) ? 0 : (i - SEARCH_S);
+			win_start = (i < SEARCH_S) ? 0 : (i - SEARCH_S);
 			
-			int sect_len = 0;
-			int offset = 0;
-			for (int j = win_start; j < i; j++) {
+			for (j = win_start; j < i; j++) {
 				int curr_len = 0;
 				while ((i + curr_len < fsize) && (j + curr_len < i) && (i_buff[i + curr_len] == i_buff[j + curr_len]) && curr_len < SEARCH_S-1) { curr_len++; }
 				if (curr_len > sect_len) {
@@ -76,7 +78,6 @@ int compress(char* file) {
 	}
 	
 finish:
-	FILE *ofp;
 	ofp = fopen("output.lol", "wb");
 	fwrite(o_buff, 1, o_off, ofp);
 	fclose(ofp);
@@ -85,31 +86,35 @@ finish:
 }
 
 int decompress(char* file) {
-	FILE *fp;
+	FILE *fp, *ofp;
+	long fsize;
+	char *i_buff, *o_buff;
+	size_t o_size = 0, s_size = 0, of_size;
+	int i, j, k;
+	char s_buff[SEARCH_S];
+	int flag_i;
+	
+
 	fp = fopen(file, "rb");
 	if (fp == NULL) { printf("cant open file %s\n", file); return 1; }
 	
 	fseek(fp, 0, SEEK_END);
-	long fsize = ftell(fp);
+	fsize = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
 	
-	char *i_buff = malloc(fsize);
-	
-	size_t o_size = 0;
-	size_t of_size = fsize;
-	char *o_buff = malloc(of_size);
-	
-	size_t s_size = 0;
-	char s_buff[SEARCH_S];
+	i_buff = malloc(fsize);
+
+	of_size = fsize;
+	o_buff = malloc(of_size);
 	
 	if((i_buff == NULL) || (o_buff == NULL)) { return 1; }
 	
 	if (fread(i_buff, sizeof(char), fsize, fp) != fsize) { return 1; }
 	
-	for (int i = 0; i < fsize; ) {
+	for (i = 0; i < fsize; ) {
 		size_t flag_pos = i++;
 		unsigned int flag = i_buff[flag_pos];
-		for (int flag_i = 0; flag_i < 8; flag_i++) {
+		for (flag_i = 0; flag_i < 8; flag_i++) {
 			int bit = (flag >> flag_i) & 1;
 			if (bit) {
 				unsigned char offset = i_buff[i++];
@@ -124,7 +129,7 @@ int decompress(char* file) {
 				/* printf("%d sect_len\n", sect_len);
 				printf("%d offset\n", offset); */
 				
-				for (int k = 0; k < sect_len; k++) {
+				for (k = 0; k < sect_len; k++) {
 					o_buff[o_size + k] = o_buff[o_size - offset + k];
 				}
 				
@@ -145,8 +150,7 @@ int decompress(char* file) {
 		/* printf("%d\n", i); */
 	}
 	
-finish:
-	FILE *ofp;
+finish:           
 	ofp = fopen("output.lold", "wb");
 	fwrite(o_buff, 1, o_size, ofp);
 	fclose(ofp);
